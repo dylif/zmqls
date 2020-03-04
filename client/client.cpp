@@ -16,6 +16,21 @@ using namespace std::chrono;
 using namespace zmq;
 using namespace cv;
 
+static Mat gamma_correction(const Mat &m, const double &g)
+{
+        // Create lookup table
+        Mat t(1, 256, CV_8U);
+        uint8_t *p = t.ptr();
+        for(int i = 0; i < 256; ++i)
+                p[i] = saturate_cast<uint8_t>(pow(i / 255.0, g) * 255.0);
+
+        // Apply the lookup table transform
+        Mat f = m.clone();
+        LUT(m, t, f);
+        
+        return f;
+}
+
 int zmqls::client::stream::start(zmq::context_t &ctx)
 {
         // Escape key constant
@@ -34,6 +49,8 @@ int zmqls::client::stream::start(zmq::context_t &ctx)
                 "width", 0, &zmqls::json::wrapper::is_number_unsigned);
         auto custom_height = this->m_json.get<uint>(
                 "height", 0, &zmqls::json::wrapper::is_number_unsigned);
+        auto gamma = this->m_json.get<double>(
+                "gamma", -1, &zmqls::json::wrapper::is_number);
 
         // Sanity check
         if (address.empty()) {
@@ -108,6 +125,12 @@ int zmqls::client::stream::start(zmq::context_t &ctx)
                         frame = tmp;
                 }
 
+                // If we are given a gamma value, correct the image
+                if (gamma >= 0) {
+                        Mat tmp = gamma_correction(frame, gamma);
+                        frame = tmp;
+                }
+
                 // Show the frame for a total of 1 millisecond
                 // Quit if escape key is pressed
                 cv::imshow(this->m_name, frame);
@@ -151,6 +174,7 @@ int main(int argc, char **argv)
                 << " threads" << endl;
         context_t ctx(args.threads);
 
+        // Try starting the stream by parsing the input file
         try {
                 zmqls::client::stream stream(args.file);
                 stream.start(ctx);

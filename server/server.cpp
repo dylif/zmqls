@@ -3,20 +3,19 @@
 #include <iostream>
 #include <string>
 #include <thread>
-using namespace std;
-
 #include <chrono>
-using namespace std::chrono;
 
 #include <opencv2/opencv.hpp>
-using namespace cv;
-
 #include <zmq.hpp>
-using namespace zmq;
 
 #include <zmqls/zmqls.hpp>
 #include <zmqls/cl_args.hpp>
 #include <zmqls/json.hpp>
+
+using namespace std;
+using namespace std::chrono;
+using namespace cv;
+using namespace zmq;
 
 void zmqls::server::stream::update_all_settings(ostream &os, bool verbose)
 {
@@ -121,7 +120,8 @@ int zmqls::server::stream::start(zmq::context_t &ctx)
         // For FPS limiter
         auto last_frame = steady_clock::now();
 
-        while (1) {
+        // Main non-terminating loop
+        while (true) {
                 // For FPS limiter
                 time_point<steady_clock> wait_until;
                 if (fps > 0)
@@ -178,6 +178,7 @@ int main(int argc, char **argv)
                 << " threads" << endl;
         context_t ctx(args.threads);
 
+        // Try starting the stream by parsing the input file
         try {
                 zmqls::server::stream stream(args.file);
                 stream.start(ctx);
