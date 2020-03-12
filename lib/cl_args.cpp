@@ -1,23 +1,21 @@
 #include <string>
+#include <filesystem>
 
 #include <zmqls/cl_args.hpp>
 
 cxxopts::Options zmqls::cl_args::add_options()
 {
         cxxopts::Options opt(name, desc);
-        opt
-                .positional_help("<file>")
-        ;
-        opt
-                .allow_unrecognised_options()
+        opt.positional_help("<file>");
+        opt.allow_unrecognised_options()
                 .add_options()
                 ("help", this->help_desc, cxxopts::value(this->help))
-                ("v,verbose", this->verbose_desc, cxxopts::value(this->verbose))
                 ("t,threads", this->threads_desc, 
                         cxxopts::value<uint>(this->threads)
                         ->default_value(this->threads_def))
-                ("file", this->file_desc, cxxopts::value<std::string>(this->file))
-        ;
+                ("file", this->file_desc, 
+                        cxxopts::value<std::string>(this->file)
+                        ->default_value(this->file_def));
 
         return opt;
 }
@@ -40,7 +38,7 @@ int zmqls::cl_args::parse(int argc, char **argv)
         // otherwise complain about not having an input file
         if (this->help) {
                 std::cout << opt.help();
-        } else if (this->file.empty()) {
+        } else if (!std::filesystem::exists(this->file)) {
                 std::cerr << this->name << ": No input file" << std::endl;
                 return EXIT_FAILURE;
         }

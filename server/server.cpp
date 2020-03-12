@@ -14,8 +14,6 @@
 
 using namespace std;
 using namespace std::chrono;
-using namespace cv;
-using namespace zmq;
 
 void zmqls::server::stream::update_all_settings(ostream &os, bool verbose)
 {
@@ -113,7 +111,7 @@ int zmqls::server::stream::start(zmq::context_t &ctx)
         this->update_all_settings(cerr, verbose);
 
         // Matrices for raw and encoded frames
-        Mat frame;
+        cv::Mat frame;
         // Vector to store encoded frame's data
         vector<uint8_t> encoded;     
         
@@ -136,7 +134,7 @@ int zmqls::server::stream::start(zmq::context_t &ctx)
 
                 // Resize raw, compress, and encode it
                 vector<int> params(2);
-                params.push_back(IMWRITE_JPEG_QUALITY);
+                params.push_back(cv::IMWRITE_JPEG_QUALITY);
                 params.push_back(encode);
                 imencode(".jpg", frame, encoded, params);
 
@@ -173,10 +171,7 @@ int main(int argc, char **argv)
                 return check;
 
         // Create ZMQ context
-        if (args.verbose) cout << args.name 
-                << ": Creating ZMQ context with " << args.threads 
-                << " threads" << endl;
-        context_t ctx(args.threads);
+        zmq::context_t ctx(args.threads);
 
         // Try starting the stream by parsing the input file
         try {
